@@ -2273,7 +2273,9 @@ local function BuildRegenOptions(flow)
         cfg().regenMax = v
         apply()
     end)
-    Row(flow, LAYOUT.check, regenUI.rateCB, regenUI.maxSlider)
+    -- a slider row needs LAYOUT.slider height: at LAYOUT.check the "Full at" label
+    -- overlapped the font-size slider of the text engine below it
+    Row(flow, LAYOUT.slider, regenUI.rateCB, regenUI.maxSlider)
 end
 
 local ELEMENT_INFO = {
@@ -2285,7 +2287,7 @@ local ELEMENT_INFO = {
 }
 -- Width, height and opacity only: place, size and rotation are done with the
 -- mouse on the item itself.
-local elemCB, elemW, elemH, elemA = {}, {}, {}, {}
+local elemCB, elemW, elemH, elemA, elemS = {}, {}, {}, {}, {}
 for _, info in ipairs(ELEMENT_INFO) do
     local key = info.key
     elemCB[key] = MakeCheck(hudChild, "FRH2CB_" .. key, 340, 0, "Show", function(self)
@@ -2301,6 +2303,10 @@ for _, info in ipairs(ELEMENT_INFO) do
     elemA[key] = MakeSlider(hudChild, "FRH2A_" .. key, 12,  0, 190, 0.1, 1, 0.05, "Opacity", function(v)
         db.elements[key].alpha = v; ApplyElement(key)
     end)
+    -- size from the menu as well as with CTRL + wheel on the item (same saved value)
+    elemS[key] = MakeSlider(hudChild, "FRH2S_" .. key, 240, 0, 190, 0.5, 3, 0.05, "Scale", function(v)
+        db.elements[key].scale = v; ApplyElement(key)
+    end)
     HeaderRow(hudFlow, info.label, elemCB[key])
     Row(hudFlow, LAYOUT.slider, elemW[key], elemH[key])
     if key == "energy" then
@@ -2313,6 +2319,7 @@ for _, info in ipairs(ELEMENT_INFO) do
     else
         Row(hudFlow, LAYOUT.slider, elemA[key])
     end
+    Row(hudFlow, LAYOUT.slider, elemS[key])
     if key == "swing" then BuildSwingOptions(hudFlow) end
     if key == "regen" then BuildRegenOptions(hudFlow) end
     ME.Mark(key, hudFlow, hudChild)   -- where this element's later rows go (2 build: its text options)
@@ -2340,7 +2347,7 @@ StaticPopupDialogs["FRH2_CONFIRM_RESET"] = {
     OnAccept = function() ResetToDefaults() end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
-NoteRow(hudFlow, "Place, size and turn every item with the mouse on the item itself. The Help tab shows how.")
+NoteRow(hudFlow, "Place, size and turn every item with the mouse on the item itself, or set its Scale here or on the Abilities tab. The Help tab shows how.")
 
 -- ========================== Config tab ==========================
 local cfgScroll, cfgChild = MakeScroll("FRH2ConfigScroll", pageConfig, -4)
@@ -2373,7 +2380,7 @@ for _, n in ipairs(ME.NOTIFY) do
 end
 DividerRow(cfgFlow)
 
-local cfgCB, cfgA = {}, {}
+local cfgCB, cfgA, cfgS = {}, {}, {}
 for _, a in ipairs(ABILITIES) do
     local key = a.key
     cfgCB[key] = MakeCheck(cfgChild, "FRH2CFGCB_" .. key, 340, 0, "On", function(self)
@@ -2383,8 +2390,12 @@ for _, a in ipairs(ABILITIES) do
     cfgA[key] = MakeSlider(cfgChild, "FRH2CFGA_" .. key, 6,   0, 190, 0.1, 1, 0.05, "Opacity", function(v)
         db.spells[key].alpha = v; ApplySpell(key)
     end)
+    -- icon size from the menu (the same saved value as CTRL + wheel on the icon)
+    cfgS[key] = MakeSlider(cfgChild, "FRH2CFGS_" .. key, 230, 0, 190, 0.5, 3, 0.05, "Scale", function(v)
+        db.spells[key].scale = v; ApplySpell(key)
+    end)
     HeaderRow(cfgFlow, a.name, cfgCB[key])
-    Row(cfgFlow, LAYOUT.slider, cfgA[key])
+    Row(cfgFlow, LAYOUT.slider, cfgA[key], cfgS[key])
     -- typeface and number size of this ability's countdown (2 build)
     TXT.itemFont = TXT.itemFont or {}
     TXT.itemSize = TXT.itemSize or {}
@@ -2408,6 +2419,7 @@ RefreshConfig = function()
         local key = a.key
         cfgCB[key]:SetChecked(db.spells[key].enabled)
         cfgA[key]:SetValue(db.spells[key].alpha or 1)
+        cfgS[key]:SetValue(db.spells[key].scale or 1)
     end
 end
 
@@ -2966,7 +2978,7 @@ do
     HeaderRow(flow, "Editing the HUD with the mouse")
     Para("This only works while this window is open and Lock (HUD tab) is off. Point at any bar or icon: it lights up and a tooltip names it.")
     Para("MOVE: hold CTRL, then hold the left mouse button on the item. It follows the cursor. Let go to drop it.")
-    Para("SIZE: hold CTRL and roll the mouse wheel over the item. Up is bigger, down is smaller.")
+    Para("SIZE: hold CTRL and roll the mouse wheel over the item. Up is bigger, down is smaller. Or drag its Scale slider: bars are on the HUD tab, icons on the Abilities tab (the same size either way).")
     Para("TURN: hold CTRL, then hold the right mouse button on the item and drag around it. It stays as you leave it.")
     Para("STRAIGHTEN: double-click the right mouse button on the item. It goes back to its original orientation.")
     Para("Icons turn to any angle. Bars, combo points and the recent-actions row turn in quarter turns; their text stays upright.")
@@ -3938,6 +3950,10 @@ UF.UNITS = {
     { key = "player",       unit = "player",       label = "Player",           blizz = "PlayerFrame" },
     { key = "target",       unit = "target",       label = "Target",           blizz = "TargetFrame" },
     { key = "targettarget", unit = "targettarget", label = "Target of target", blizz = "TargetFrameToT" },
+    { key = "party1", unit = "party1", label = "Party 1", blizz = "PartyMemberFrame1" },
+    { key = "party2", unit = "party2", label = "Party 2", blizz = "PartyMemberFrame2" },
+    { key = "party3", unit = "party3", label = "Party 3", blizz = "PartyMemberFrame3" },
+    { key = "party4", unit = "party4", label = "Party 4", blizz = "PartyMemberFrame4" },
 }
 UF.COLORS = {
     { key = "class",  name = "Class / reaction" },
@@ -4004,10 +4020,10 @@ UF.OPTS = {
     { t = "header", l = "General" },
     { k = "enabled",      t = "check",  l = "Enable this frame", d = false },
     { k = "hideBlizzard", t = "check",  l = "Hide the game's own frame", d = true },
-    { k = "x",     t = "slider", mouse = true, l = "X (from screen centre)", d = 0, du = { player = -290, target = 290 }, min = -1200, max = 1200, step = 1 },
-    { k = "y",     t = "slider", mouse = true, l = "Y (from screen centre)", d = -190, du = { targettarget = -240 }, min = -700, max = 700, step = 1 },
-    { k = "w",     t = "slider", l = "Width",  d = 230, du = { targettarget = 130 }, min = 40, max = 600, step = 1 },
-    { k = "h",     t = "slider", l = "Height", d = 34,  du = { targettarget = 24 },  min = 10, max = 200, step = 1 },
+    { k = "x",     t = "slider", mouse = true, l = "X (from screen centre)", d = 0, du = { player = -290, target = 290, party1 = -560, party2 = -560, party3 = -560, party4 = -560 }, min = -1200, max = 1200, step = 1 },
+    { k = "y",     t = "slider", mouse = true, l = "Y (from screen centre)", d = -190, du = { targettarget = -240, party1 = -120, party2 = -72, party3 = -24, party4 = 24 }, min = -700, max = 700, step = 1 },
+    { k = "w",     t = "slider", l = "Width",  d = 230, du = { targettarget = 130, party1 = 150, party2 = 150, party3 = 150, party4 = 150 }, min = 40, max = 600, step = 1 },
+    { k = "h",     t = "slider", l = "Height", d = 34,  du = { targettarget = 24, party1 = 28, party2 = 28, party3 = 28, party4 = 28 },  min = 10, max = 200, step = 1 },
     { k = "scale", t = "slider", mouse = true, l = "Scale",   d = 1, min = 0.5, max = 3, step = 0.05 },
     { k = "alpha", t = "slider", l = "Opacity", d = 1, min = 0.1, max = 1, step = 0.05 },
     { k = "strata",  t = "cycle",  l = "Strata", d = "LOW", list = UF.STRATA },
@@ -5820,6 +5836,7 @@ function FRH2_RefreshPanel()
         elemW[key]:SetValue(db.elements[key].w)
         elemH[key]:SetValue(db.elements[key].h)
         elemA[key]:SetValue(db.elements[key].alpha or 1)
+        elemS[key]:SetValue(db.elements[key].scale or 1)
     end
     local sw = db.elements.swing
     swingUI.skinCB:SetChecked(sw.useSkinColor)
@@ -6006,6 +6023,19 @@ function FRH2_UpdateCombo()
     end
 end
 
+-- Slice and Dice is a buff on the player, not a cooldown: its icon shows the
+-- time left on the buff (the sweep and countdown run down to the buff's end).
+local SND_ID = 5171
+local function SndAura()
+    if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return nil end
+    for i = 1, 40 do
+        local ok, d = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
+        if not ok or not d then return nil end
+        if d.spellId == SND_ID then return d end
+    end
+    return nil
+end
+
 -- Ask the client which spell ID is behind each spellbook name. Rank 1 IDs are
 -- what the table holds; a character who knows rank 5 gets rank 5's icon and
 -- cooldown. Anything the client cannot name keeps the table ID.
@@ -6062,7 +6092,16 @@ local function UpdateSpellIcon(btn)
         btn:SetBackdropBorderColor(Col(currentSkin.iconEdge))
     end
     local ok, info
-    if C_Spell and C_Spell.GetSpellCooldown then ok, info = pcall(C_Spell.GetSpellCooldown, id) end
+    if id == SND_ID then
+        -- Slice and Dice is a buff on you: the sweep and the countdown run down
+        -- the time it has left (no buff: no sweep)
+        local d = SndAura()
+        if d and IsReadable(d.expirationTime) and IsReadable(d.duration) and d.duration > 0 then
+            ok, info = true, { startTime = d.expirationTime - d.duration, duration = d.duration }
+        else
+            ok, info = true, { startTime = 0, duration = 0 }
+        end
+    elseif C_Spell and C_Spell.GetSpellCooldown then ok, info = pcall(C_Spell.GetSpellCooldown, id) end
     if not ok or type(info) ~= "table" then
         btn.timer:SetText("")
         btn._cooling = false
@@ -6182,6 +6221,9 @@ driver:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         swingElapsed = 0
     elseif event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_DATA_LOAD_RESULT" then
         UpdateAllSpells()
+    elseif event == "UNIT_AURA" then
+        -- the Slice and Dice icon follows the player's buffs
+        if spellIcons.snd then UpdateSpellIcon(spellIcons.snd) end
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
         -- unit, cast GUID, spell ID
         if elems.trail:IsShown() then ME.LogCast(arg3) end
@@ -6209,6 +6251,7 @@ end
 pcall(function() driver:RegisterUnitEvent("UNIT_POWER_UPDATE", "player") end)
 pcall(function() driver:RegisterUnitEvent("UNIT_DISPLAYPOWER", "player") end)
 pcall(function() driver:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player") end)
+pcall(function() driver:RegisterUnitEvent("UNIT_AURA", "player") end)
 driver:SetScript("OnUpdate", function(_, elapsed)
     if not db then return end
     if elems.swing:IsShown() then UpdateSwingBar(elapsed) end
