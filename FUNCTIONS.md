@@ -238,7 +238,7 @@ Chat and macros: `/fr2 frames` opens the tab, `FRH2_ApplyFrames()`, `FRH2_FRAMES
 | 2291 | `BuildRegenOptions(flow)` |  |
 | 2292 | `cfg()` (nested) |  |
 | 2293 | `apply()` (nested) |  |
-| 2317 | `ME.ScaleWheel(sl)` | Width, height and opacity only: place, size and rotation are done with the mouse on the item itself. A Scale slider also takes CTRL + mouse wheel: up is bigger, down is smaller, a step of 0.05. |
+| 2317 | `ME.ScaleWheel(sl)` | Width, height and opacity only: place, size and rotation are done with the mouse on the item itself. A Scale slider also takes CTRL + mouse wheel: up is bigger, down is smaller, a step of 0.25. |
 | 2371 | `ResetToDefaults()` |  |
 | 2389 | `OnAccept()` (nested) |  |
 
@@ -340,120 +340,149 @@ Chat and macros: `/fr2 frames` opens the tab, `FRH2_ApplyFrames()`, `FRH2_FRAMES
 |---:|---|---|
 | 3727 | `Changed()` (nested) | a button changed something: apply it and repaint the button labels |
 
+### Party window: you on top, then party 1 to 4, in ONE floating window.
+
+| Line | Function | What it does |
+|---:|---|---|
+| 3854 | `UF.ClampParty(src)` |  |
+| 3876 | `UF.PartyChord()` | all three keys down: the chord that moves and sizes the window |
+| 3881 | `UF.PartyCanEdit()` | may the window be moved or sized right now? |
+| 3887 | `UF.PartyDown(button)` |  |
+| 3892 | `UF.PartyUp(button)` |  |
+| 3906 | `UF.PartyWheel(delta)` |  |
+| 3916 | `UF.PartyWindow()` | The window itself: not secure, so it can carry the scripts; the rows are anchored to it and follow it. |
+| 3958 | `UF.PartyWheelOn()` |  |
+| 3969 | `UF.PartySize()` | how many of party1..4 exist right now |
+| 3979 | `UF.PartyBind(f)` | What a click on a row does. Only out of combat (UF.Apply sees to that). |
+| 4000 | `UF.PartyPlace(f, info, cfg, y)` | Called from UF.Apply for a party row instead of the free placement. |
+| 4008 | `UF.PartyLayout()` | Size, place and show the window round the rows that are on. |
+| 4045 | `UF.PartySetOn(on)` | "Enable the party window" switches all five rows together. |
+| 4050 | `UF.PartyIsOn()` |  |
+
 ### Option schemas (shared by the Frames and Map tabs)
 
 | Line | Function | What it does |
 |---:|---|---|
-| 3834 | `TXT.ClampOptions(opts, s, unitKey)` | A validated settings table for one schema. s may be nil (gives defaults). |
-| 3865 | `TXT.BuildOptions(flow, child, prefix, opts, cur, changed)` | Build the widgets for a schema, two to a row under their section headers. cur() returns the table being edited; changed(o, isSlider) applies it. |
-| 3921 | `TXT.ShowOptions(ws, opts, t, unitKey, inheritedFont)` | Show a settings table on its widgets. Call with suppress set. |
-| 3947 | `TXT.AfterCombat(key, fn)` | Run fn once combat has ended (now, if not in combat). key keeps one pending call per job however often it is asked for. |
-| 3966 | `TXT.Stash(frame, hide)` | Move a game frame under a hidden parent, or give it back. Reversible, so an option can be switched off again without a reload (ElvUI's hide, minus the part that cannot be undone). |
+| 4074 | `TXT.ClampOptions(opts, s, unitKey)` | A validated settings table for one schema. s may be nil (gives defaults). |
+| 4105 | `TXT.BuildOptions(flow, child, prefix, opts, cur, changed)` | Build the widgets for a schema, two to a row under their section headers. cur() returns the table being edited; changed(o, isSlider) applies it. |
+| 4161 | `TXT.ShowOptions(ws, opts, t, unitKey, inheritedFont)` | Show a settings table on its widgets. Call with suppress set. |
+| 4187 | `TXT.AfterCombat(key, fn)` | Run fn once combat has ended (now, if not in combat). key keeps one pending call per job however often it is asked for. |
+| 4206 | `TXT.Stash(frame, hide)` | Move a game frame under a hidden parent, or give it back. Reversible, so an option can be switched off again without a reload (ElvUI's hide, minus the part that cannot be undone). |
 
 ### Unit frames (the "2" build): player, target, target of target
 
 | Line | Function | What it does |
 |---:|---|---|
-| 4232 | `UF.Clamp(src)` | Fill and validate db.frames from SavedVariables or a profile. |
-| 4242 | `UF.Locked()` | True while the client forbids changing a secure frame. |
-| 4248 | `UF.UnitColor(u)` | Class colour for a player, reaction colour for anything else, or nil when the client will not let us read which it is. |
-| 4265 | `UF.Health(f)` | Health bar and health text. Secret values only ever reach the widgets. |
-| 4293 | `UF.Power(f)` | Power bar and, if wanted, the power number. The bar folds away when the unit has no power or is an NPC (if those options are on). |
-| 4316 | `UF.Tint(f)` | Bar colours. Anything the client will not let us read falls back to the skin, so this cannot error on a secret value. |
-| 4338 | `UF.Name(f)` | Name text: with or without the level, in the text colour or the unit's. |
-| 4361 | `UF.Portrait(f)` | Portrait: the unit's 2D picture or its 3D model. |
-| 4388 | `UF.Icons(f)` | Raid target icon on any frame; resting and combat icons on the player's. |
-| 4406 | `UF.Threat(f)` | Border colour from threat: yellow, orange, red; the skin's border otherwise. |
-| 4427 | `UF.Fade(f)` | Opacity: the frame's own, or the idle value while nothing keeps it awake. SetAlpha is not a protected call, so this runs in combat. |
-| 4440 | `UF.Light(f)` | What a poll or a plain refresh needs: no portrait work. |
-| 4451 | `UF.Update(f)` | Everything about the unit. With no such unit (the options window is open and nothing is targeted) the frame shows its own label so it can still be seen, sized and dragged. |
-| 4482 | `UF.Listen(f, on)` | Start or stop listening for one frame's unit. A frame that is off listens to nothing. |
-| 4521 | `UF.Create(info)` | Build one frame. Runs once per unit, the first time it is switched on, and never in combat (UF.Apply sees to that). |
-| 4667 | `UF.Layout(f, cfg)` | Bars, portrait, texts and icons inside the frame. None of this is protected, so it may run in combat (the power bar folding away does). |
-| 4708 | `Put(fs, bar, anchor, x, y)` (nested) | a text anchored to a side keeps 4 px off that edge |
-| 4732 | `UF.Fonts()` | Typeface, size, outline and shadow of every unit frame text. Called from TXT.Apply as well, so the frames follow the Text tab. |
-| 4753 | `UF.TextColor()` | Text colour: the skin's, or the custom one from the Text tab. |
-| 4773 | `UF.Paint()` | Skin colours. Called from ApplySkin; nothing here is protected. |
-| 4787 | `UF.Apply()` | Push db.frames to the frames: build, place, size, show or hide, and hide or restore the game's own. In combat it does nothing but remember that it was asked, and runs when combat ends. |
-| 4862 | `UF.Refresh()` | Show the selected unit's settings on the Frames tab. |
-| 4885 | `FRH2_ApplyFrames()` |  |
-| 4887 | `FRH2_SelectFrame(key)` | Open the Frames tab on one unit ("player", "target", "targettarget"). |
+| 4483 | `UF.Clamp(src, party)` | Fill and validate db.frames from SavedVariables or a profile. |
+| 4494 | `UF.Locked()` | True while the client forbids changing a secure frame. |
+| 4500 | `UF.UnitColor(u)` | Class colour for a player, reaction colour for anything else, or nil when the client will not let us read which it is. |
+| 4517 | `UF.Health(f)` | Health bar and health text. Secret values only ever reach the widgets. |
+| 4545 | `UF.Power(f)` | Power bar and, if wanted, the power number. The bar folds away when the unit has no power or is an NPC (if those options are on). |
+| 4568 | `UF.Tint(f)` | Bar colours. Anything the client will not let us read falls back to the skin, so this cannot error on a secret value. |
+| 4590 | `UF.Name(f)` | Name text: with or without the level, in the text colour or the unit's. |
+| 4613 | `UF.Portrait(f)` | Portrait: the unit's 2D picture or its 3D model. |
+| 4640 | `UF.Icons(f)` | Raid target icon on any frame; resting and combat icons on the player's. |
+| 4658 | `UF.Threat(f)` | Border colour from threat: yellow, orange, red; the skin's border otherwise. |
+| 4679 | `UF.Fade(f)` | Opacity: the frame's own, or the idle value while nothing keeps it awake. SetAlpha is not a protected call, so this runs in combat. |
+| 4692 | `UF.Light(f)` | What a poll or a plain refresh needs: no portrait work. |
+| 4703 | `UF.Update(f)` | Everything about the unit. With no such unit (the options window is open and nothing is targeted) the frame shows its own label so it can still be seen, sized and dragged. |
+| 4734 | `UF.Listen(f, on)` | Start or stop listening for one frame's unit. A frame that is off listens to nothing. |
+| 4773 | `UF.Create(info)` | Build one frame. Runs once per unit, the first time it is switched on, and never in combat (UF.Apply sees to that). |
+| 4924 | `UF.Layout(f, cfg)` | Bars, portrait, texts and icons inside the frame. None of this is protected, so it may run in combat (the power bar folding away does). |
+| 4965 | `Put(fs, bar, anchor, x, y)` (nested) | a text anchored to a side keeps 4 px off that edge |
+| 4989 | `UF.Fonts()` | Typeface, size, outline and shadow of every unit frame text. Called from TXT.Apply as well, so the frames follow the Text tab. |
+| 5010 | `UF.TextColor()` | Text colour: the skin's, or the custom one from the Text tab. |
+| 5030 | `UF.Paint()` | Skin colours. Called from ApplySkin; nothing here is protected. |
+| 5044 | `UF.Apply()` | Push db.frames to the frames: build, place, size, show or hide, and hide or restore the game's own. In combat it does nothing but remember that it was asked, and runs when combat ends. |
+| 5131 | `UF.Refresh()` | Show the selected unit's settings on the Frames tab. |
+| 5154 | `FRH2_ApplyFrames()` |  |
+| 5156 | `FRH2_SelectFrame(key)` | Open the Frames tab on one unit ("player", "target", "targettarget"). |
 
 ### Frames tab
 
 | Line | Function | What it does |
 |---:|---|---|
-| 4933 | `ME.onInteractive(on)` | the wheel only belongs to a unit frame while the options window is open |
+| 5256 | `ME.onInteractive(on)` | the wheel only belongs to a unit frame while the options window is open |
+| 5268 | `UF.Refresh()` (nested) |  |
 
 ### Unit frame extras: cast bar, buffs / debuffs, aura bars, incoming heals
 
 | Line | Function | What it does |
 |---:|---|---|
-| 4955 | `UF.Flag(fn, ...)` | True only for a value we are allowed to read that is also truthy. |
-| 4962 | `UF.Extras(f)` | The pieces every frame has from the start (cheap: textures and strings). |
-| 4974 | `Icon(key, tex, point, shift)` (nested) |  |
-| 4989 | `UF.CastBar(f)` | ---------------------------------------------------------------- cast bar |
-| 5040 | `UF.Cast(f)` | Start, refresh or end the cast bar from what the unit is doing right now. Every cast event lands here; asking the client again is simpler and safer than tracking each event's meaning. |
-| 5098 | `UF.AuraButton(f, list, i)` | ------------------------------------------------------- buffs and debuffs |
-| 5129 | `UF.PlaceAura(f, list, i)` | Put button i of a row set where the layout says (list.size / perRow / dir / base). |
-| 5144 | `UF.FillAuras(f, list, on, max, filter)` | Fill one set of aura icons from the client. The filter does the choosing ("only mine" is the client's PLAYER filter), so nothing secret is compared. |
-| 5181 | `UF.AuraBar(f, i)` | --------------------------------------------------------------- aura bars |
-| 5199 | `UF.AuraBars(f)` |  |
-| 5241 | `UF.AurasAll(f)` | Buffs, debuffs and aura bars together: one UNIT_AURA, one pass. |
-| 5251 | `UF.Heal(f)` | ----------------------------------------------------------- incoming heals A bar that starts where the health fill ends and is as wide as the whole health bar, clipped by it: the heal amount needs no arithmetic at all. |
-| 5261 | `UF.Custom(f)` | ------------------------------------------------------------- custom texts |
-| 5297 | `UF.Combo(f)` | ------------------------------------------------------------- combo points Same reading as the HUD's own combo element, including its secret path. |
-| 5315 | `UF.Status(f)` | ------------------------------------------------------------- status icons |
-| 5333 | `UF.More(f)` | Everything above for a unit that exists; called from UF.Update. |
-| 5343 | `UF.Clear(f)` | And for a unit that does not (the placeholder shown while placing a frame). |
-| 5371 | `UF.LayoutMore(f, cfg, barW)` | Size and place the extras. Things attached above and below the frame are stacked outwards in a fixed order, so they never overlap each other: cast bar, combo points, buffs, debuffs, aura bars. |
-| 5441 | `Stack(list, on, size, max, pos)` (nested) | buffs, then debuffs, each on its side of the frame |
-| 5465 | `UF.FontMore(f, path, cfg, t)` | Fonts of the extras; called from UF.Fonts for each frame. |
+| 5294 | `UF.Flag(fn, ...)` | True only for a value we are allowed to read that is also truthy. |
+| 5301 | `UF.Extras(f)` | The pieces every frame has from the start (cheap: textures and strings). |
+| 5313 | `Icon(key, tex, point, shift)` (nested) |  |
+| 5328 | `UF.CastBar(f)` | ---------------------------------------------------------------- cast bar |
+| 5379 | `UF.Cast(f)` | Start, refresh or end the cast bar from what the unit is doing right now. Every cast event lands here; asking the client again is simpler and safer than tracking each event's meaning. |
+| 5437 | `UF.AuraButton(f, list, i)` | ------------------------------------------------------- buffs and debuffs |
+| 5468 | `UF.PlaceAura(f, list, i)` | Put button i of a row set where the layout says (list.size / perRow / dir / base). |
+| 5483 | `UF.FillAuras(f, list, on, max, filter)` | Fill one set of aura icons from the client. The filter does the choosing ("only mine" is the client's PLAYER filter), so nothing secret is compared. |
+| 5520 | `UF.AuraBar(f, i)` | --------------------------------------------------------------- aura bars |
+| 5538 | `UF.AuraBars(f)` |  |
+| 5580 | `UF.AurasAll(f)` | Buffs, debuffs and aura bars together: one UNIT_AURA, one pass. |
+| 5589 | `UF.DispelTint(f)` | Health bar tint from the debuff on the unit (first one the client gives a dispel type for). |
+| 5611 | `UF.Heal(f)` | ----------------------------------------------------------- incoming heals A bar that starts where the health fill ends and is as wide as the whole health bar, clipped by it: the heal amount needs no arithmetic at all. |
+| 5621 | `UF.Custom(f)` | ------------------------------------------------------------- custom texts |
+| 5657 | `UF.Combo(f)` | ------------------------------------------------------------- combo points Same reading as the HUD's own combo element, including its secret path. |
+| 5683 | `UF.DispelColor(unit)` |  |
+| 5698 | `UF.PlateColour(cfg, unit)` | The same health colour the unit frame itself would use (before any debuff tint). |
+| 5709 | `NPIcons(parent, n)` |  |
+| 5720 | `UF.Plate(f, unit)` | One bar per enemy plate, made the first time that plate needs one. |
+| 5747 | `UF.PlateAuras(tb, cfg, unit, isz, pipH)` | Fill the aura rows of one plate: buffs you can steal or dispel, debuffs you applied or can dispel. Icons are only shown for auras the client gives us. |
+| 5786 | `UF.PlateUpdate(f, unit, cfg)` | One plate, when its unit is an enemy the client has a nameplate for. |
+| 5829 | `UF.TBUpdate(f)` | Every enemy plate. Called on the target frame's updates and on the events below. |
+| 5837 | `UF.TBDriver(f)` | Listens for the events that change a plate, so the bars follow without a frame update. |
+| 5849 | `UF.Status(f)` | ------------------------------------------------------------- status icons |
+| 5867 | `UF.More(f)` | Everything above for a unit that exists; called from UF.Update. |
+| 5878 | `UF.Clear(f)` | And for a unit that does not (the placeholder shown while placing a frame). |
+| 5906 | `UF.LayoutMore(f, cfg, barW)` | Size and place the extras. Things attached above and below the frame are stacked outwards in a fixed order, so they never overlap each other: cast bar, combo points, buffs, debuffs, aura bars. |
+| 5976 | `Stack(list, on, size, max, pos)` (nested) | buffs, then debuffs, each on its side of the frame |
+| 6000 | `UF.FontMore(f, path, cfg, t)` | Fonts of the extras; called from UF.Fonts for each frame. |
 
 ### Map (the "2" build): minimap and world map options
 
 | Line | Function | What it does |
 |---:|---|---|
-| 5515 | `MP.Clamp(src)` |  |
-| 5521 | `MP.Pos(map)` | Player position on a map as 0-100, 0-100, or nil where the client gives none (instances). map nil = the map the player is on. |
-| 5537 | `MP.Coords(on)` | Coordinates text under the minimap. Its frame only exists, and only updates (4 times a second), while the option is on. |
-| 5556 | `MP.WorldShow()` | World map: applied each time it opens. |
-| 5568 | `MP.WorldTick(self, elapsed)` | World map coordinates, 10 times a second while the map is open. |
-| 5587 | `MP.World()` | World map options. Nothing is hooked until one of them is first used. |
-| 5617 | `MP.Paint()` | Fonts and colours of the two coordinate texts; the minimap border. |
-| 5633 | `MP.Apply()` | Push db.map to the game's map frames. Waits for combat to end. |
-| 5730 | `MP.Refresh()` | Show db.map on the Map tab. |
-| 5741 | `FRH2_ApplyNow()` | Push the whole saved configuration to the screen again: skin, HUD, texts, unit frames, map. Returns false if the frame and map part had to wait for combat to end. |
-| 5754 | `FRH2_ApplyMap()` |  |
+| 6050 | `MP.Clamp(src)` |  |
+| 6056 | `MP.Pos(map)` | Player position on a map as 0-100, 0-100, or nil where the client gives none (instances). map nil = the map the player is on. |
+| 6072 | `MP.Coords(on)` | Coordinates text under the minimap. Its frame only exists, and only updates (4 times a second), while the option is on. |
+| 6091 | `MP.WorldShow()` | World map: applied each time it opens. |
+| 6103 | `MP.WorldTick(self, elapsed)` | World map coordinates, 10 times a second while the map is open. |
+| 6122 | `MP.World()` | World map options. Nothing is hooked until one of them is first used. |
+| 6152 | `MP.Paint()` | Fonts and colours of the two coordinate texts; the minimap border. |
+| 6168 | `MP.Apply()` | Push db.map to the game's map frames. Waits for combat to end. |
+| 6265 | `MP.Refresh()` | Show db.map on the Map tab. |
+| 6276 | `FRH2_ApplyNow()` | Push the whole saved configuration to the screen again: skin, HUD, texts, unit frames, map. Returns false if the frame and map part had to wait for combat to end. |
+| 6289 | `FRH2_ApplyMap()` |  |
 
 ### Map tab
 
 | Line | Function | What it does |
 |---:|---|---|
-| 5788 | `PaintSwing()` | The swing bar's colours depend on both the skin and the user's own swing options, so they are painted here and called from ApplySkin and from ApplyElement("swing") alike. |
-| 5806 | `ApplySkin(key)` | Palette and edge style only: nothing here sets a point, a size or a scale, so switching skins cannot move or resize anything. |
-| 5876 | `FRH2_SetSkin(key)` | Choose a skin: stores it and repaints. Returns false for an unknown key. |
-| 5883 | `FRH2_RefreshPanel()` |  |
+| 6323 | `PaintSwing()` | The swing bar's colours depend on both the skin and the user's own swing options, so they are painted here and called from ApplySkin and from ApplyElement("swing") alike. |
+| 6341 | `ApplySkin(key)` | Palette and edge style only: nothing here sets a point, a size or a scale, so switching skins cannot move or resize anything. |
+| 6411 | `FRH2_SetSkin(key)` | Choose a skin: stores it and repaints. Returns false for an unknown key. |
+| 6418 | `FRH2_RefreshPanel()` |  |
 
 ### Data updates — reads go to widgets, never into our own compare
 
 | Line | Function | What it does |
 |---:|---|---|
-| 5944 | `PowerIndex()` | Energy: power type 3 on this client, the same in every stance. |
-| 5948 | `UpdateEnergy()` |  |
-| 5964 | `UpdateRegen(elapsed)` |  |
-| 6014 | `SwingDuration(e)` | Where the swing duration comes from. Whatever this returns is a plain, readable number: the manual override is our own value, the event duration was checked with IsReadable when it arrived, and UnitAttackSpeed is only... |
-| 6030 | `UpdateSwingBar(elapsed)` |  |
-| 6063 | `FRH2_UpdateCombo()` |  |
-| 6094 | `SndAura()` |  |
-| 6107 | `ResolveSpells()` | Ask the client which spell ID is behind each spellbook name. Rank 1 IDs are what the table holds; a character who knows rank 5 gets rank 5's icon and cooldown. Anything the client cannot name keeps the table ID. |
-| 6128 | `FormatRemaining(rem)` | "7" under a minute, "2:05" under an hour. Only ever called with a plain number that passed IsReadable. |
-| 6140 | `UpdateSpellIcon(btn)` | Cooldown reading: the same shape GlowingBars uses on this client. One pass per icon does the sweep, the countdown text and the ready flash; there is no per-icon OnUpdate, so a hidden icon costs nothing. |
-| 6232 | `UpdateAllSpells()` |  |
-| 6246 | `ME.TickTimers()` | Hundredths need every frame. This touches only icons that are on a cooldown already read by the pass above (plain numbers), and asks the client nothing. |
+| 6479 | `PowerIndex()` | Energy: power type 3 on this client, the same in every stance. |
+| 6483 | `UpdateEnergy()` |  |
+| 6499 | `UpdateRegen(elapsed)` |  |
+| 6549 | `SwingDuration(e)` | Where the swing duration comes from. Whatever this returns is a plain, readable number: the manual override is our own value, the event duration was checked with IsReadable when it arrived, and UnitAttackSpeed is only... |
+| 6565 | `UpdateSwingBar(elapsed)` |  |
+| 6598 | `FRH2_UpdateCombo()` |  |
+| 6629 | `SndAura()` |  |
+| 6642 | `ResolveSpells()` | Ask the client which spell ID is behind each spellbook name. Rank 1 IDs are what the table holds; a character who knows rank 5 gets rank 5's icon and cooldown. Anything the client cannot name keeps the table ID. |
+| 6663 | `FormatRemaining(rem)` | "7" under a minute, "2:05" under an hour. Only ever called with a plain number that passed IsReadable. |
+| 6675 | `UpdateSpellIcon(btn)` | Cooldown reading: the same shape GlowingBars uses on this client. One pass per icon does the sweep, the countdown text and the ready flash; there is no per-icon OnUpdate, so a hidden icon costs nothing. |
+| 6767 | `UpdateAllSpells()` |  |
+| 6781 | `ME.TickTimers()` | Hundredths need every frame. This touches only icons that are on a cooldown already read by the pass above (plain numbers), and asks the client nothing. |
 
 ### Slash commands
 
 | Line | Function | What it does |
 |---:|---|---|
-| 6431 | `SlashCmdList.FOREVERROGUEHUD2(msg)` |  |
+| 6966 | `SlashCmdList.FOREVERROGUEHUD2(msg)` |  |
